@@ -652,7 +652,7 @@ class StatusMixin:
             'issue',
             'finish',
         ]:
-            raise ValueError(f"Order stats {status} not supported.")
+            raise ValueError(f"Order status {status} not supported.")
 
         # Set the url
         URL = self.URL + f"/{self.pk}/{status}"
