@@ -2,6 +2,7 @@
 
 import inventree.base
 import inventree.report
+import inventree.stock
 
 
 class Build(
@@ -48,3 +49,40 @@ class Build(
     def finish(self, *args, **kwargs):
         """Alias for complete"""
         return self.complete(*args, **kwargs)
+
+    def getLines(self, **kwargs):
+        """ Return the build line items associated with this build order """
+        return BuildLine.list(self._api, build=self.pk, **kwargs)
+
+class BuildLine(
+    inventree.base.InventreeObject,
+):
+    """ Class representing the BuildLine database model """
+
+    URL = 'build/line/'
+    MODEL_TYPE = 'buildline'
+
+    def getBuild(self):
+        """Return the Build object associated with this line item"""
+        return Build(self._api, self.build)
+
+
+class BuildItem(
+    inventree.base.InventreeObject,
+):
+    """ Class representing the BuildItem database model """
+
+    URL = 'build/item/'
+    MODEL_TYPE = 'builditem'
+
+    def getBuild(self):
+        """Return the Build object associated with this build item"""
+        return Build(self._api, self.build)
+
+    def getBuildLine(self):
+        """Return the BuildLine object associated with this build item"""
+        return BuildLine(self._api, self.build_line)
+    
+    def getStockItem(self):
+        """Return the StockItem object associated with this build item"""
+        return inventree.stock.StockItem(self._api, self.stock_item)
