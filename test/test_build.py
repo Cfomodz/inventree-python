@@ -36,9 +36,9 @@ class BuildOrderTest(InvenTreeTestCase):
                 self.api,
                 {
                     "title": "Automated test build",
-                    "part": 25,
+                    "part": 100,
                     "quantity": 100,
-                    "reference": f"BO-{n+1:04d}",
+                    "reference": f"BO-{n + 1:04d}",
                 }
             )
         else:
@@ -93,7 +93,7 @@ class BuildOrderTest(InvenTreeTestCase):
                 "title": "Automated test build",
                 "part": 25,
                 "quantity": 100,
-                "reference": f"BO-{n+1:04d}"
+                "reference": f"BO-{n + 1:04d}"
             }
         )
 
@@ -118,7 +118,7 @@ class BuildOrderTest(InvenTreeTestCase):
                 "title": "Automated test build",
                 "part": 25,
                 "quantity": 100,
-                "reference": f"BO-{n+1:04d}"
+                "reference": f"BO-{n + 1:04d}"
             }
         )
 
