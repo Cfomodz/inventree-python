@@ -54,6 +54,7 @@ class Build(
         """ Return the build line items associated with this build order """
         return BuildLine.list(self._api, build=self.pk, **kwargs)
 
+
 class BuildLine(
     inventree.base.InventreeObject,
 ):
