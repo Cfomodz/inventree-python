@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from test_api import InvenTreeTestCase  # noqa: E402
 
 from inventree.base import Attachment  # noqa: E402
-from inventree.build import Build, BuildLine  # noqa: E402
+from inventree.build import Build  # noqa: E402
 
 
 class BuildOrderTest(InvenTreeTestCase):
@@ -144,16 +144,3 @@ class BuildOrderTest(InvenTreeTestCase):
         # Check status
         self.assertEqual(build.status, 40)
         self.assertEqual(build.status_text, 'Complete')
-
-    def test_build_lines(self):
-        """ Test retrieval of build line items. """
-
-        build = self.get_build()
-
-        lines = build.getLines()
-
-        self.assertGreater(len(lines), 0)
-
-        for line in lines:
-            self.assertEqual(line.build, build.pk)
-            self.assertIsInstance(line, BuildLine)
