@@ -61,7 +61,7 @@ class Build(
             - complete: If not None, filter the build outputs by their 'complete' status
         """
         if complete is not None:
-            kwargs['complete'] = complete
+            kwargs['is_building'] = not complete
 
         # Find stock items which are marked as 'outputs' of this build order
         return inventree.stock.StockItem.list(
@@ -86,63 +86,68 @@ class Build(
         """ Cancel a build output item associated with this build order
 
         Arguments:
-            - outputs: The StockItem object (or list of StockItem objects, or PK(s)) to cancel
+            - outputs: The StockItem object (or list of StockItem objects) to cancel
         """
 
         if not isinstance(outputs, list):
             outputs = [outputs]
 
-        for idx, output in outputs:
-            if isinstance(output, inventree.stock.StockItem):
-                outputs[idx] = output.pk
-
         return self._api.post(
-            f'{self.URL}delete-outputs/',
+            f'{self.URL}{self.pk}/delete-outputs/',
             data={
-                'outputs': outputs,
+                'outputs': [
+                    {'output': output.pk} for output in outputs
+                ]
             }
         )
 
-    def scrapBuildOutput(self, outputs, **kwargs):
-        """ Scrap a build output item associated with this build order
+    def scrapBuildOutput(self, output, **kwargs):
+        """ Scrap a single build output item associated with this build order
 
         Arguments:
-            - outputs: The StockItem object (or list of StockItem objects, or PK(s)) to scrap
+            - output: The StockItem object to scrap
         """
-        if not isinstance(outputs, list):
-            outputs = [outputs]
 
-        for idx, output in outputs:
-            if isinstance(output, inventree.stock.StockItem):
-                outputs[idx] = output.pk
+        data = {
+            **kwargs,
+            'outputs': [
+                {
+                    'output': output.pk,
+                    'quantity': kwargs.get('quantity', output.quantity),
+                }
+            ]
+        }
+
+        data['location'] = kwargs.get('location', output.location)
 
         return self._api.post(
-            f'{self.URL}scrap-outputs/',
-            data={
-                'build': self.pk,
-                'outputs': {
-                    # TODO
-                },
-                **kwargs
-            }
+            f'{self.URL}{self.pk}/scrap-outputs/',
+            data=data
         )
 
-    def completeBuildOutput(self, stock_item, **kwargs):
-        """ Mark a build output item as complete
+    def completeBuildOutput(self, output, **kwargs):
+        """ Mark a single build output item as complete
 
         Arguments:
-            - stock_item: The StockItem object (or PK) to mark as complete
+            - output: The StockItem object to mark as complete
         """
-        if isinstance(stock_item, inventree.stock.StockItem):
-            stock_item = stock_item.pk
+
+        data = {
+            **kwargs,
+            'outputs': [
+                {
+                    'output': output.pk,
+                    'quantity': kwargs.get('quantity', output.quantity),
+                }
+            ]
+        }
+
+        # If a location is not specified, use the current location of the stock item
+        data['location'] = kwargs.get('location', output.location)
 
         return self._api.post(
-            f'{self.URL}complete_output/',
-            data={
-                'build': self.pk,
-                'stock_item': stock_item,
-                **kwargs
-            }
+            f'{self.URL}{self.pk}/complete/',
+            data=data
         )
 
 

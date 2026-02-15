@@ -177,7 +177,7 @@ class BuildOrderOutputTests(InvenTreeTestCase):
         outputs = self.build.createBuildOutput(
             quantity=3,
             batch_code='TEST-BATCH-001',
-            serial_numbers='300+'
+            serial_numbers='400+'
         )
 
         self.assertEqual(len(outputs), 3)
@@ -196,3 +196,85 @@ class BuildOrderOutputTests(InvenTreeTestCase):
 
         # There should now be no build outputs again
         self.assertEqual(len(self.build.getBuildOutputs()), 0)
+
+    def test_cancel_build_output(self):
+        """ Test that we can cancel a build output item """
+
+        self.assertEqual(len(self.build.getBuildOutputs()), 0)
+
+        # Create a new build output
+        output = self.build.createBuildOutput(
+            quantity=1,
+            batch_code='TEST-BATCH-001',
+            serial_numbers='456'
+        )[0]
+
+        self.assertEqual(len(self.build.getBuildOutputs()), 1)
+
+        self.build.cancelBuildOutputs(output)
+        self.assertEqual(len(self.build.getBuildOutputs()), 0)
+
+    def test_complete_build_output(self):
+        """ Test that we can complete a build output item """
+
+        self.assertEqual(len(self.build.getBuildOutputs()), 0)
+
+        # Create a new build output
+        output = self.build.createBuildOutput(
+            quantity=1,
+            batch_code='TEST-BATCH-001',
+            serial_numbers='457'
+        )[0]
+
+        q = self.build.completed
+
+        self.assertTrue(output.is_building)
+        self.assertEqual(len(self.build.getBuildOutputs()), 1)
+
+        # Complete the build output
+        self.build.completeBuildOutput(output, location=1)
+
+        self.assertEqual(len(self.build.getBuildOutputs()), 1)
+        output.reload()
+        self.assertFalse(output.is_building)
+
+        # Remove the output
+        output.delete()
+        self.assertEqual(len(self.build.getBuildOutputs()), 0)
+
+        # The number of "completed" items should have increased by 1
+        self.build.reload()
+        self.assertEqual(self.build.completed, q + 1)
+
+    def test_scrap_build_output(self):
+        """Test that we can scrap a build output item"""
+
+        self.assertEqual(len(self.build.getBuildOutputs()), 0)
+
+        # Create a new build output
+        output = self.build.createBuildOutput(
+            quantity=1,
+            batch_code='TEST-BATCH-001',
+            serial_numbers='468'
+        )[0]
+
+        q = self.build.completed
+
+        self.assertTrue(output.is_building)
+        self.assertEqual(len(self.build.getBuildOutputs()), 1)
+
+        # Scrap the build output
+        self.build.scrapBuildOutput(output, location=1, notes='Test scrap')
+        self.assertEqual(len(self.build.getBuildOutputs()), 1)
+        self.assertEqual(len(self.build.getBuildOutputs(complete=False)), 0)
+        self.assertEqual(len(self.build.getBuildOutputs(complete=True)), 1)
+
+        output.reload()
+        self.assertFalse(output.is_building)
+
+        # Remove the build output
+        output.delete()
+
+        # The number of "completed" items should not have increased
+        self.build.reload()
+        self.assertEqual(self.build.completed, q)
