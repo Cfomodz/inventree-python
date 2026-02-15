@@ -21,7 +21,7 @@ class Build(
     def issue(self):
         """Mark this build as 'issued'."""
         return self._statusupdate(status='issue')
-    
+
     def hold(self):
         """Mark this build as 'on hold'."""
         return self._statusupdate(status='hold')
@@ -54,6 +54,94 @@ class Build(
         """ Return the build line items associated with this build order """
         return BuildLine.list(self._api, build=self.pk, **kwargs)
 
+    def getBuildOutputs(self, complete: bool = None, **kwargs):
+        """ Return the build output items associated with this build order
+
+        Arguments:
+            - complete: If not None, filter the build outputs by their 'complete' status
+        """
+        if complete is not None:
+            kwargs['complete'] = complete
+
+        # Find stock items which are marked as 'outputs' of this build order
+        return inventree.stock.StockItem.list(
+            self._api,
+            build=self.pk,
+            **kwargs
+        )
+
+    def createBuildOutput(self, **kwargs):
+        """ Create a new build output (stock item) associated with this build order """
+        return self._api.post(
+            f'{self.URL}create_output/',
+            data={
+                **kwargs
+            }
+        )
+
+    def cancelBuildOutputs(self, outputs):
+        """ Cancel a build output item associated with this build order
+
+        Arguments:
+            - outputs: The StockItem object (or list of StockItem objects, or PK(s)) to cancel
+        """
+
+        if not isinstance(outputs, list):
+            outputs = [outputs]
+
+        for idx, output in outputs:
+            if isinstance(output, inventree.stock.StockItem):
+                outputs[idx] = output.pk
+
+        return self._api.post(
+            f'{self.URL}delete-outputs/',
+            data={
+                'outputs': outputs,
+            }
+        )
+
+    def scrapBuildOutput(self, outputs, **kwargs):
+        """ Scrap a build output item associated with this build order
+
+        Arguments:
+            - outputs: The StockItem object (or list of StockItem objects, or PK(s)) to scrap
+        """
+        if not isinstance(outputs, list):
+            outputs = [outputs]
+
+        for idx, output in outputs:
+            if isinstance(output, inventree.stock.StockItem):
+                outputs[idx] = output.pk
+
+        return self._api.post(
+            f'{self.URL}scrap-outputs/',
+            data={
+                'build': self.pk,
+                'outputs': {
+                    # TODO
+                },
+                **kwargs
+            }
+        )
+
+    def completeBuildOutput(self, stock_item, **kwargs):
+        """ Mark a build output item as complete
+
+        Arguments:
+            - stock_item: The StockItem object (or PK) to mark as complete
+        """
+        if isinstance(stock_item, inventree.stock.StockItem):
+            stock_item = stock_item.pk
+
+        return self._api.post(
+            f'{self.URL}complete_output/',
+            data={
+                'build': self.pk,
+                'stock_item': stock_item,
+                **kwargs
+            }
+        )
+
 
 class BuildLine(
     inventree.base.InventreeObject,
@@ -83,7 +171,7 @@ class BuildItem(
     def getBuildLine(self):
         """Return the BuildLine object associated with this build item"""
         return BuildLine(self._api, self.build_line)
-    
+
     def getStockItem(self):
         """Return the StockItem object associated with this build item"""
         return inventree.stock.StockItem(self._api, self.stock_item)
