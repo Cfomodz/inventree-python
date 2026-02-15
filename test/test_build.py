@@ -144,3 +144,55 @@ class BuildOrderTest(InvenTreeTestCase):
         # Check status
         self.assertEqual(build.status, 40)
         self.assertEqual(build.status_text, 'Complete')
+
+
+class BuildOrderOutputTests(InvenTreeTestCase):
+    """ Unit tests for build output functionality """
+
+    def setUp(self):
+        """ Ensure we have a base build order to work with """
+
+        super().setUp()
+
+        builds = Build.list(self.api)
+
+        self.build = Build.create(
+            self.api,
+            {
+                "title": "A new build order",
+                "part": 25,
+                "quantity": 10,
+                "reference": f"BO-{len(builds) + 1:04d}"
+            }
+        )
+
+    def test_create_build_output(self):
+        """Test that we can create a build output item"""
+
+        # Initially, there should be no build outputs
+        outputs = self.build.getBuildOutputs()
+        self.assertEqual(len(outputs), 0)
+
+        # Let's create 3 new outputs (with serial numbers)
+        outputs = self.build.createBuildOutput(
+            quantity=3,
+            batch_code='TEST-BATCH-001',
+            serial_numbers='300+'
+        )
+
+        self.assertEqual(len(outputs), 3)
+        self.assertEqual(len(self.build.getBuildOutputs()), 3)
+
+        for output in outputs:
+            self.assertIsNotNone(output)
+            self.assertEqual(output.quantity, 1)
+            self.assertEqual(output.batch, 'TEST-BATCH-001')
+            self.assertEqual(output.build, self.build.pk)
+            self.assertEqual(output.part, self.build.part)
+            self.assertTrue(output.is_building)
+
+            # Directly delete the build output
+            output.delete()
+
+        # There should now be no build outputs again
+        self.assertEqual(len(self.build.getBuildOutputs()), 0)

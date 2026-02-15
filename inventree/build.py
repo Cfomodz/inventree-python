@@ -72,12 +72,15 @@ class Build(
 
     def createBuildOutput(self, **kwargs):
         """ Create a new build output (stock item) associated with this build order """
-        return self._api.post(
-            f'{self.URL}create_output/',
+        result = self._api.post(
+            f'{self.URL}{self.pk}/create-output/',
             data={
                 **kwargs
             }
         )
+
+        # Note: The response is a list of created stock items
+        return [inventree.stock.StockItem(self._api, item['pk'], item) for item in result]
 
     def cancelBuildOutputs(self, outputs):
         """ Cancel a build output item associated with this build order
